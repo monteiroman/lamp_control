@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_PCF8574.h>
 #include <Time.h>
+#include <Bounce2.h> // Used for "debouncing" the pushbutton
 
 #define EST_PRES 0
 #define EST_SET 1
@@ -9,7 +10,7 @@
 #define EST_STOP 3
 
 #define DELAY_INI 3000
-#define START_TIME 120000
+#define START_TIME 10000
 #define MAX_SET_TIME 600000
 #define MIN_SET_TIME 60000
 #define STEP_TIME 10000
@@ -18,6 +19,13 @@ LiquidCrystal_PCF8574 lcd(0x27);  // set the LCD address to 0x27 for a 16 chars 
 
 int show;
 uint16_t state;
+
+Bounce startStopBtnDeb = Bounce();
+const int startBtn = 4;
+const int relay1 = 11;
+const int relay2 = 12;
+int8_t screenFlag;
+
 
 class myTime {
     long set_time, start, count;
@@ -118,6 +126,19 @@ void setup(){
   lcd.begin(20, 4); // initialize the lcd
   show = 0;
   state = EST_PRES;
+
+  pinMode(startBtn, INPUT);
+  pinMode(relay1, OUTPUT);
+  pinMode(relay2, OUTPUT);
+  // Setup pushbutton Bouncer object
+  startStopBtnDeb.attach(startBtn);
+  startStopBtnDeb.interval(5);
+
+  screenFlag = 1;
+
+  digitalWrite(relay1, HIGH);
+  digitalWrite(relay2, HIGH);
+
 } // setup()
 
 
@@ -157,6 +178,7 @@ void PantallaExp(String time){
 
 void loop(){
   time.setTime(START_TIME);
+  startStopBtnDeb.update();
 
   switch (state) {
     case EST_PRES:{
@@ -167,21 +189,32 @@ void loop(){
     }
     case EST_SET:{
       String tm = time.getTimeSet();
-      PantallaSeteo(tm);
-      delay(4000);
-      time.startCount(millis());
-      lcd.clear();
-      state = EST_EXP;
+
+      if(screenFlag==1){
+        PantallaSeteo(tm);
+        screenFlag = 0;
+      }
+      // delay(4000);
+      if(startStopBtnDeb.rose()){
+        time.startCount(millis());
+        lcd.clear();
+        state = EST_EXP;
+        screenFlag = 1;
+        digitalWrite(relay1, LOW);
+        digitalWrite(relay2, LOW);
+      }
       break;
     }
     case EST_EXP:{
       if(time.countdown()==0){
         String tm = time.getCount();
         PantallaExp(tm);
-      }else{
-        if(time.countdown()==-1)
-          state = EST_SET;
       }
+      if(time.countdown()==-1 || startStopBtnDeb.rose()){
+          state = EST_SET;
+          digitalWrite(relay1, HIGH);
+          digitalWrite(relay2, HIGH);
+        }
       break;
     }
   }
