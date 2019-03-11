@@ -12,7 +12,7 @@
 #define DELAY_INI 3000
 #define START_TIME 10000
 #define MAX_SET_TIME 600000
-#define MIN_SET_TIME 60000
+#define MIN_SET_TIME 10000
 #define STEP_TIME 10000
 
 LiquidCrystal_PCF8574 lcd(0x27);  // set the LCD address to 0x27 for a 16 chars and 2 line display
@@ -20,8 +20,12 @@ LiquidCrystal_PCF8574 lcd(0x27);  // set the LCD address to 0x27 for a 16 chars 
 int show;
 uint16_t state;
 
+const int startStopBtn = 4;
 Bounce startStopBtnDeb = Bounce();
-const int startBtn = 4;
+const int sumBtn = 6;
+Bounce sumBtnDeb = Bounce();
+const int subsBtn = 8;
+Bounce subsBtnDeb = Bounce();
 const int relay1 = 11;
 const int relay2 = 12;
 int8_t screenFlag;
@@ -43,13 +47,13 @@ class myTime {
 } time;
 
 myTime::myTime (){
-  set_time = 0;
-  start = 0;
-  count = 0;
+  this->set_time = 0;
+  this->start = 0;
+  this->count = 0;
 }
 
 void myTime::setTime (long m_set_time){
-  set_time = m_set_time;
+  this->set_time = m_set_time;
 }
 
 String myTime::printTime (long t){
@@ -66,32 +70,34 @@ String myTime::printTime (long t){
 }
 
 String myTime::getTimeSet (){
-  return printTime(set_time);
+  return printTime(this->set_time);
 }
 
 String myTime::getCount (){
-  return printTime(count);
+  return printTime(this->count);
 }
 
 void myTime::sumSetTime (){
-  if(set_time < MAX_SET_TIME)
-    set_time+=STEP_TIME;
+  if(this->set_time < MAX_SET_TIME){
+    this->set_time+=STEP_TIME;
+  }
 }
 
 void myTime::subsSetTime (){
-  if(set_time > MIN_SET_TIME)
-    set_time-=STEP_TIME;
+  if(this->set_time > MIN_SET_TIME){
+    this->set_time-=STEP_TIME;
+  }
 }
 
 void myTime::startCount (long m_start){
-  start = m_start;
+  this->start = m_start;
 }
 
 int myTime::countdown (){
   long actual = millis();
-  if(start){
-    if((actual-start) < set_time){
-      count = set_time-(actual-start);
+  if(this->start){
+    if((actual-this->start) < this->set_time){
+      count = this->set_time-(actual-this->start);
       return 0;
     }else{
       return -1;
@@ -127,18 +133,25 @@ void setup(){
   show = 0;
   state = EST_PRES;
 
-  pinMode(startBtn, INPUT);
+  pinMode(startStopBtn, INPUT);
+  pinMode(sumBtn, INPUT);
+  pinMode(subsBtn, INPUT);
   pinMode(relay1, OUTPUT);
   pinMode(relay2, OUTPUT);
   // Setup pushbutton Bouncer object
-  startStopBtnDeb.attach(startBtn);
-  startStopBtnDeb.interval(5);
+  startStopBtnDeb.attach(startStopBtn);
+  startStopBtnDeb.interval(10);
+  sumBtnDeb.attach(sumBtn);
+  sumBtnDeb.interval(10);
+  subsBtnDeb.attach(subsBtn);
+  subsBtnDeb.interval(10);
 
   screenFlag = 1;
 
   digitalWrite(relay1, HIGH);
   digitalWrite(relay2, HIGH);
 
+  time.setTime(START_TIME);
 } // setup()
 
 
@@ -177,8 +190,9 @@ void PantallaExp(String time){
 }
 
 void loop(){
-  time.setTime(START_TIME);
   startStopBtnDeb.update();
+  sumBtnDeb.update();
+  subsBtnDeb.update();
 
   switch (state) {
     case EST_PRES:{
@@ -193,6 +207,14 @@ void loop(){
       if(screenFlag==1){
         PantallaSeteo(tm);
         screenFlag = 0;
+      }
+      if(sumBtnDeb.rose()){
+        time.sumSetTime();
+        screenFlag = 1;
+      }
+      if(subsBtnDeb.rose()){
+        time.subsSetTime();
+        screenFlag = 1;
       }
       // delay(4000);
       if(startStopBtnDeb.rose()){
@@ -214,6 +236,7 @@ void loop(){
           state = EST_SET;
           digitalWrite(relay1, HIGH);
           digitalWrite(relay2, HIGH);
+          time.setTime(START_TIME);
         }
       break;
     }
