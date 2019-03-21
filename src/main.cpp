@@ -10,7 +10,7 @@
 #define EST_STOP 3
 
 #define DELAY_INI 3000
-#define START_TIME 10000
+#define START_TIME 60000
 #define MAX_SET_TIME 600000
 #define MIN_SET_TIME 10000
 #define STEP_TIME 10000
@@ -158,34 +158,29 @@ void setup(){
 void PantallaInicio (){
   lcd.clear();
   lcd.setBacklight(255);
-  lcd.setCursor(3, 0);
-  lcd.print("**Insolador**");
   lcd.setCursor(4, 1);
-  lcd.print("Version 0.1");
+  lcd.print("Sweet Candy");
 }
 
 void PantallaSeteo (String time){
-  lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Tiempo deseado");
-  lcd.setCursor(15, 0);
-  lcd.print(time);
-  lcd.setCursor(0, 2);
   lcd.print("< INICIAR");
-  lcd.setCursor(13, 2);
-  lcd.print("+ 10s >");
-  lcd.setCursor(13, 3);
-  lcd.print("- 10s >");
+  lcd.setCursor(14, 0);
+  lcd.print("+10s >");
+  lcd.setCursor(0, 2);
+  lcd.print("Tiempo");
+  lcd.setCursor(7, 2);
+  lcd.print(time);
+  lcd.setCursor(14, 3);
+  lcd.print("-10s >");
 }
 
 void PantallaExp(String time){
-  lcd.setCursor(5, 0);
-  lcd.print("EXPONIENDO");
-  lcd.setCursor(0, 2);
+  lcd.setCursor(0, 0);
   lcd.print("< PARAR");
-  lcd.setCursor(4, 3);
-  lcd.print("t.restante");
-  lcd.setCursor(15, 3);
+  lcd.setCursor(5, 2);
+  lcd.print("EXPONIENDO");
+  lcd.setCursor(8, 3);
   lcd.print(time);
 }
 
@@ -199,6 +194,7 @@ void loop(){
       PantallaInicio();
       delay(DELAY_INI);
       state = EST_SET;
+      lcd.clear();
       break;
     }
     case EST_SET:{
@@ -216,14 +212,13 @@ void loop(){
         time.subsSetTime();
         screenFlag = 1;
       }
-      // delay(4000);
       if(startStopBtnDeb.rose()){
         time.startCount(millis());
         lcd.clear();
         state = EST_EXP;
         screenFlag = 1;
         digitalWrite(relay1, LOW);
-        digitalWrite(relay2, LOW);
+        // digitalWrite(relay2, LOW);
       }
       break;
     }
@@ -235,8 +230,9 @@ void loop(){
       if(time.countdown()==-1 || startStopBtnDeb.rose()){
           state = EST_SET;
           digitalWrite(relay1, HIGH);
-          digitalWrite(relay2, HIGH);
+          // digitalWrite(relay2, HIGH);
           time.setTime(START_TIME);
+          lcd.clear();
         }
       break;
     }
