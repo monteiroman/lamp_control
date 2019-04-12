@@ -14,6 +14,7 @@
 #define MAX_SET_TIME 600000
 #define MIN_SET_TIME 10000
 #define STEP_TIME 10000
+#define DEBOUNCE_TIME 10
 
 LiquidCrystal_PCF8574 lcd(0x27);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
@@ -26,6 +27,8 @@ const int sumBtn = 6;
 Bounce sumBtnDeb = Bounce();
 const int subsBtn = 8;
 Bounce subsBtnDeb = Bounce();
+const int auxBtn = 10;
+Bounce auxBtnDeb = Bounce();
 const int relay1 = 11;
 const int relay2 = 12;
 int8_t screenFlag;
@@ -140,11 +143,13 @@ void setup(){
   pinMode(relay2, OUTPUT);
   // Setup pushbutton Bouncer object
   startStopBtnDeb.attach(startStopBtn);
-  startStopBtnDeb.interval(10);
+  startStopBtnDeb.interval(DEBOUNCE_TIME);
   sumBtnDeb.attach(sumBtn);
-  sumBtnDeb.interval(10);
+  sumBtnDeb.interval(DEBOUNCE_TIME);
   subsBtnDeb.attach(subsBtn);
-  subsBtnDeb.interval(10);
+  subsBtnDeb.interval(DEBOUNCE_TIME);
+  auxBtnDeb.attach(auxBtn);
+  auxBtnDeb.interval(DEBOUNCE_TIME);
 
   screenFlag = 1;
 
@@ -188,6 +193,11 @@ void loop(){
   startStopBtnDeb.update();
   sumBtnDeb.update();
   subsBtnDeb.update();
+  auxBtnDeb.update();
+
+  if(auxBtnDeb.rose()){
+    digitalWrite(relay2, !digitalRead(relay2));
+  }
 
   switch (state) {
     case EST_PRES:{
