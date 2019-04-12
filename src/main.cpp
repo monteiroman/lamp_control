@@ -228,6 +228,7 @@ void loop(){
         state = EST_EXP;
         screenFlag = 1;
         digitalWrite(relay1, LOW);
+        delay(100);
         // digitalWrite(relay2, LOW);
       }
       break;
